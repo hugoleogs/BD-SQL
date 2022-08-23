@@ -1,0 +1,180 @@
+0)######################################
+
+CREATE DATABASE hospitais
+GO
+
+USE hospitais
+GO
+
+CREATE SCHEMA stg_prontuario
+GO
+
+CREATE SCHEMA stg_hospital_a
+go
+CREATE SCHEMA stg_hospital_b
+go
+CREATE SCHEMA stg_hospital_c
+go
+######################################
+
+01)###################################
+CREATE TABLE stg_prontuario.PACIENTE (
+ID INT IDENTITY(1,1) PRIMARY KEY,
+NOME VARCHAR (60),
+DT_NASCIMENTO DATE,
+CPF INT,
+NOME_MAE VARCHAR (60),
+DT_ATUALIZACAO TIMESTAMP
+)
+GO
+
+
+CREATE TABLE stg_hospital_a.PACIENTE (
+ID INT IDENTITY(1,1) PRIMARY KEY,
+NOME VARCHAR (60),
+IDADE INT,
+DT_NASCIMENTO DATE,
+CPF INT,
+ENDERECO VARCHAR (60),
+NOME_MAE VARCHAR (60),
+DT_ATUALIZACAO TIMESTAMP
+) 
+GO 
+######################################
+
+02)###################################
+INSERT INTO stg_hospital_a.PACIENTE (NOME, IDADE, DT_NASCIMENTO, CPF, ENDERECO, NOME_MAE) VALUES ('Hugo', 55, '2000-11-08', 089257, 'casa de voinha', 'Gorete')
+go
+INSERT INTO stg_hospital_a.PACIENTE (NOME, IDADE, DT_NASCIMENTO, CPF, ENDERECO, NOME_MAE) VALUES ('BiluBilu', 35, '2009-12-08', 099297, 'casa de kaka', 'Lorete')
+go
+
+INSERT INTO stg_prontuario.PACIENTE (NOME, DT_NASCIMENTO, CPF, NOME_MAE) select NOME, DT_NASCIMENTO, CPF, NOME_MAE from stg_hospital_a.PACIENTE
+go
+
+#######################################
+
+03)####################################
+
+INSERT INTO stg_prontuario.PACIENTE (NOME, DT_NASCIMENTO, CPF, NOME_MAE) VALUES ('Hugo', '2000-11-08', 089257, 'Gorete')
+go
+
+INSERT INTO stg_prontuario.PACIENTE (NOME, DT_NASCIMENTO, CPF, NOME_MAE) VALUES ('BiluBilu', '2009-12-08', 099297, 'Lorete')
+go
+
+INSERT INTO stg_prontuario.PACIENTE (NOME, DT_NASCIMENTO, CPF, NOME_MAE) VALUES ('LauLau', '2005-10-09', 000007, 'Borete')
+go
+
+SELECT NOME FROM stg_prontuario.PACIENTE  WHERE stg_prontuario.PACIENTE.CPF IN (SELECT CPF FROM stg_prontuario.PACIENTE GROUP BY CPF HAVING Count(*) > 1) GROUP BY NOME HAVING Count(*) > 1
+GO
+######################################
+
+
+04)###################################
+SELECT NOME, MAX(DT_ATUALIZACAO) FROM stg_prontuario.PACIENTE  WHERE stg_prontuario.PACIENTE.CPF IN (SELECT CPF FROM stg_prontuario.PACIENTE GROUP BY CPF HAVING Count(*) > 1) GROUP BY NOME HAVING Count(*) > 1
+#####################################
+
+05)###################################
+import pandas as pd
+import pyodbc
+
+arquivo = pd.read_csv('./arquivo_entrada.csv')
+
+conexao = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=hospitais;UID=sa;PWD=1234@Hugo;TrustServerCertificate=yes')
+cursor = conexao.cursor()
+
+cursor.execute("CREATE TABLE stg_hospital_b.PACIENTE (ID INT IDENTITY(1,1) PRIMARY KEY, NOME VARCHAR (60), IDADE INT, DT_NASCIMENTO DATE, CPF INT, ENDERECO VARCHAR (60), NOME_MAE VARCHAR (60), DT_ATUALIZACAO TIMESTAMP)")
+
+for ind, cadaLinha in arquivo.iterrows():
+    cursor.execute("INSERT INTO stg_hospital_b.PACIENTE (NOME, IDADE, DT_NASCIMENTO, CPF, ENDERECO, NOME_MAE) VALUES (?,?,?,?,?,?)", cadaLinha.NOME, cadaLinha.IDADE, cadaLinha.DT_NASCIMENTO, cadaLinha.CPF, cadaLinha.ENDERECO, cadaLinha.NOME_MAE)
+
+cursor.commit()
+cursor.close()
+####################################
+
+06)#################################
+import pyodbc
+import requests
+from pandas import json_normalize
+
+
+request = requests.get("http://files.cod3r.com.br/curso-js/turmaA.json")
+df = json_normalize(request.json())
+
+conexao = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=hospitais;UID=sa;PWD=1234@Hugo;TrustServerCertificate=yes')
+cursor = conexao.cursor()
+
+cursor.execute("CREATE TABLE stg_hospital_c.PACIENTE (ID INT IDENTITY(1,1) PRIMARY KEY, NOME VARCHAR (60), IDADE INT, DT_NASCIMENTO DATE, CPF INT, ENDERECO VARCHAR (150), NOME_MAE VARCHAR (60), DT_ATUALIZACAO TIMESTAMP)")
+
+for ind, cadaLinha in df.iterrows():
+    cursor.execute("INSERT INTO stg_hospital_c.PACIENTE (NOME, IDADE, ENDERECO) VALUES (?,?,?)", cadaLinha.nome, cadaLinha.id, cadaLinha.imagem)
+
+cursor.commit()
+cursor.close()
+####################################
+
+
+07)#################################
+Problema 07: Eu faria uma relação 1 para n. Para cada ocorrencia na tabela Paciente poderiamos ter várias referencias para a tabela q contem os diagnosticos.
+####################################
+
+
+09)#################################
+def validation(ent1, ent2):
+    for letra in list(ent1):
+        return (ent2.count(letra) >= ent1.count(letra))
+
+
+print(validation('a', 'b'))
+print(validation('aa', 'b'))
+print(validation('aa', 'aab'))
+print(validation('aba', 'cbaa'))
+
+##################################3#
+
+
+10)#################################
+import matplotlib.pyplot as plt
+from collections import Counter
+
+entrada_datas = ['2000-11-08', '2005-10-09', '2005-10-09', '2000-11-08', '2003-09-10', '2000-11-08', '2000-11-08']
+
+quantidade_de_acessos_por_dia = Counter(entrada_datas)
+
+plt.figure(figsize=(10,10))
+plt.title("Quantidade de atendimento por data")
+plt.bar(quantidade_de_acessos_por_dia.keys(), quantidade_de_acessos_por_dia.values())
+plt.show()
+#####################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
